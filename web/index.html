@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Aura Expense — Personal Expense Tracker</title>
+  
+  <!-- PWA & Mobile Web Capabilities -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Aura">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Production-ready personal expense tracker tailored for India with iOS financial design system">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%230A84FF'>✨</text></svg>">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="mobile-app-container">
+  <div class="device-viewport">
+    
+    <!-- Top Safe Area Status Bar -->
+    <div class="status-bar">
+      <span class="status-time" id="status-clock">9:41</span>
+      <div class="status-icons">
+        <span>5G</span>
+        <span>📶</span>
+        <span>🔋</span>
+      </div>
+    </div>
+
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="greeting-date">
+        <span class="greeting-text">Good morning</span>
+        <span class="date-text" id="header-date">September 25</span>
+      </div>
+      <div class="header-actions">
+        <button class="qr-pill-btn" id="btn-show-qr" title="Scan to open on mobile phone">
+          <span>📲</span>
+          <span>Mobile QR</span>
+        </button>
+        <button class="theme-toggle-btn" id="btn-theme-toggle" title="Toggle Light / Dark mode">
+          <span id="theme-icon">☀️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Scrollable App Views -->
+    <main class="app-content">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: HOME DASHBOARD                      -->
+      <!-- ========================================== -->
+      <section class="tab-content active" id="tab-home">
+        
+        <!-- Spent Hero Card -->
+        <div class="ios-card spent-hero-card">
+          <div class="spent-label-row">
+            <span class="spent-label">Total Spent This Month</span>
+            <span class="spent-badge">+4.2% vs Aug</span>
+          </div>
+          <div class="spent-amount" id="hero-spent-amount">₹24,680.00</div>
+          <div class="spent-metrics">
+            <div class="metric-item">
+              <span class="metric-label">DAILY AVERAGE</span>
+              <span class="metric-val" id="hero-daily-avg">₹822/day</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">PROJECTED MONTH-END</span>
+              <span class="metric-val" id="hero-projected">₹29,400</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Budget Card -->
+        <div class="ios-card ios-card-interactive" onclick="switchTab('budgets')">
+          <div class="budget-header">
+            <span class="budget-title">Monthly Budget</span>
+            <span class="budget-ratio" id="home-budget-ratio">₹24,680 / ₹30,000</span>
+          </div>
+          <div class="budget-progress-track">
+            <div class="budget-progress-bar" id="home-budget-bar" style="width: 82%;"></div>
+          </div>
+          <div class="budget-footer">
+            <span class="budget-left-tag" id="home-budget-left">₹5,320 remaining</span>
+            <span class="budget-percent-tag" id="home-budget-percent">82% used</span>
+          </div>
+        </div>
+
+        <!-- Review Queue Notice Banner -->
+        <div class="ios-card review-notice-card" id="home-review-card" onclick="switchTab('sync')">
+          <div class="review-notice-left">
+            <div class="review-icon-circle">!</div>
+            <div>
+              <div class="review-title">Review Queue</div>
+              <div class="review-subtitle" id="home-review-count">2 transactions need review</div>
+            </div>
+          </div>
+          <button class="btn-review-mini">Review</button>
+        </div>
+
+        <!-- Sync Status Pill -->
+        <div class="sync-pill-card" onclick="switchTab('sync')">
+          <div class="sync-status-group">
+            <span class="pulse-dot"></span>
+            <span>Last synced 2m ago</span>
+          </div>
+          <span class="sync-banks">HDFC ••4092, SBI ••8120</span>
+        </div>
+
+        <!-- Quick Categories -->
+        <div class="section-header">
+          <span class="section-title">Categories</span>
+          <span class="section-link" onclick="switchTab('reports')">Analytics ›</span>
+        </div>
+        <div class="category-scroll-row" id="home-category-pills"></div>
+
+        <!-- Recent Transactions -->
+        <div class="section-header">
+          <span class="section-title">Recent Spends</span>
+          <span class="section-link" onclick="switchTab('transactions')">See All ›</span>
+        </div>
+        <div class="tx-list-group" id="home-recent-list"></div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: TRANSACTIONS LIST                   -->
+      <!-- ========================================== -->
+      <section class="tab-content" id="tab-transactions">
+        
+        <!-- Search Input -->
+        <div class="ios-search-box">
+          <span>🔍</span>
+          <input type="text" class="ios-search-input" id="input-tx-search" placeholder="Search merchant, category, amount..." autocomplete="off">
+        </div>
+
+        <!-- Segmented Filter -->
+        <div class="ios-segmented-control">
+          <div class="segmented-option active" data-filter="ALL">All</div>
+          <div class="segmented-option" data-filter="EXPENSE">Spends</div>
+          <div class="segmented-option" data-filter="INCOME">Income</div>
+        </div>
+
+        <!-- Filtered Grouped List -->
+        <div id="tx-full-list"></div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: BUDGETS                            -->
+      <!-- ========================================== -->
+      <section class="tab-content" id="tab-budgets">
+        <div class="section-header" style="margin-top: 4px;">
+          <span class="section-title">Monthly Limits</span>
+          <span style="font-size: 13px; color: var(--text-secondary);">₹30,000 Total</span>
+        </div>
+
+        <div id="budgets-category-list"></div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: REPORTS & ANALYTICS                -->
+      <!-- ========================================== -->
+      <section class="tab-content" id="tab-reports">
+        <div class="section-header" style="margin-top: 4px;">
+          <span class="section-title">Spending Breakdown</span>
+          <span style="font-size: 12px; font-weight: 600; color: var(--accent);">September 2026</span>
+        </div>
+
+        <div class="ios-card chart-container">
+          <div id="report-donut-svg"></div>
+          <div class="donut-legend" id="report-donut-legend"></div>
+        </div>
+
+        <div class="section-header">
+          <span class="section-title">Top Merchants</span>
+        </div>
+        <div class="ios-card" id="report-top-merchants" style="padding: 6px 18px;"></div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 5: SYNC & LIVE SMS PARSER SIMULATOR    -->
+      <!-- ========================================== -->
+      <section class="tab-content" id="tab-sync">
+        <div class="section-header" style="margin-top: 4px;">
+          <span class="section-title">Live Bank SMS Parser</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+          Test real-time parsing engine for Indian bank SMS alerts (HDFC, SBI, ICICI, Axis).
+        </p>
+
+        <div class="ios-card" style="padding: 16px;">
+          <div class="sms-preset-chips">
+            <div class="sms-preset-chip active" data-bank="hdfc">HDFC Bank</div>
+            <div class="sms-preset-chip" data-bank="sbi">SBI UPI</div>
+            <div class="sms-preset-chip" data-bank="icici">ICICI Card</div>
+            <div class="sms-preset-chip" data-bank="axis">Axis Bank</div>
+          </div>
+
+          <textarea class="sms-textarea" id="sms-input-text">Sent Rs.450.00 from HDFC Bank A/C **4092 to SWIGGY UPI:428910284 on 25-09-26. Bal: INR 18,420.50</textarea>
+          
+          <button class="btn-primary" id="btn-parse-sms" style="padding: 12px; font-size: 14px; margin-top: 4px;">
+            ⚡ Parse SMS
+          </button>
+
+          <div class="parse-result-box" id="sms-parse-result"></div>
+        </div>
+
+        <!-- Pending Review Queue -->
+        <div class="section-header" style="margin-top: 24px;">
+          <span class="section-title">Review Queue</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+          Low-confidence entries waiting for 1-tap categorization.
+        </p>
+        <div id="review-queue-list"></div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 6: SETTINGS                           -->
+      <!-- ========================================== -->
+      <section class="tab-content" id="tab-settings">
+        <div class="section-header" style="margin-top: 4px;">
+          <span class="section-title">Settings & Data</span>
+        </div>
+
+        <div class="ios-card" style="padding: 4px 16px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--divider);">
+            <div>
+              <div style="font-weight: 600; font-size: 15px;">Appearance</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Toggle Dark / Light OLED theme</div>
+            </div>
+            <button class="theme-toggle-btn" onclick="toggleTheme()" style="width: 32px; height: 32px;">🌓</button>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0;">
+            <div>
+              <div style="font-weight: 600; font-size: 15px;">Currency Display</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Indian Lakhs (₹1,23,456)</div>
+            </div>
+            <span style="font-weight: 700; color: var(--accent);">INR (₹)</span>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <span class="section-title">Export & Backup</span>
+        </div>
+        <div class="ios-card" style="padding: 14px 16px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <button class="btn-primary" style="margin-top: 0; padding: 11px; font-size: 13px; background: var(--bg-surface-secondary); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: none;" onclick="exportData('csv')">
+              📥 Export CSV
+            </button>
+            <button class="btn-primary" style="margin-top: 0; padding: 11px; font-size: 13px; background: var(--bg-surface-secondary); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: none;" onclick="exportData('json')">
+              📦 Export JSON
+            </button>
+          </div>
+          <button class="btn-primary" style="margin-top: 0; padding: 11px; font-size: 13px; background: rgba(255, 69, 58, 0.15); color: var(--expense); border: 1px solid rgba(255, 69, 58, 0.3); box-shadow: none;" onclick="resetDemoData()">
+            ↺ Reset Demo Data
+          </button>
+        </div>
+
+        <div class="ios-card" style="padding: 14px 16px; margin-top: 16px; background: transparent; border: 1px dashed var(--border-color);">
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">🔒 Privacy & Zero Credentials</div>
+          <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+            Aura Expense operates with zero sensitive credentials stored. Never asks for UPI PINs, CVVs, passwords, or OTPs. All data stays local to your device.
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-tab-btn active" data-tab="home">
+        <span class="nav-tab-icon">🏠</span>
+        <span class="nav-tab-label">Home</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="transactions">
+        <span class="nav-tab-icon">💳</span>
+        <span class="nav-tab-label">Spends</span>
+      </button>
+      
+      <!-- Floating Center Add Button -->
+      <button class="nav-add-btn" id="btn-nav-add" title="Add new expense">+</button>
+
+      <button class="nav-tab-btn" data-tab="budgets">
+        <span class="nav-tab-icon">🎯</span>
+        <span class="nav-tab-label">Budgets</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="reports">
+        <span class="nav-tab-icon">📊</span>
+        <span class="nav-tab-label">Reports</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="sync">
+        <span class="nav-tab-icon">⚡</span>
+        <span class="nav-tab-label">Sync</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="settings">
+        <span class="nav-tab-icon">⚙️</span>
+        <span class="nav-tab-label">Settings</span>
+      </button>
+    </nav>
+
+    <!-- ========================================== -->
+    <!-- MODAL: ADD EXPENSE (Bottom Sheet)          -->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="modal-add-expense">
+      <div class="bottom-sheet">
+        <div class="sheet-header-handle"></div>
+        <div class="sheet-header">
+          <span class="sheet-title">New Entry</span>
+          <button class="sheet-close-btn" id="btn-close-add-modal">✕</button>
+        </div>
+        <div class="sheet-body">
+          <form id="form-add-expense">
+            
+            <!-- Type Selector -->
+            <div class="ios-segmented-control" style="margin-bottom: 12px;">
+              <div class="segmented-option active" data-type="EXPENSE">Expense</div>
+              <div class="segmented-option" data-type="INCOME">Income</div>
+              <div class="segmented-option" data-type="TRANSFER">Transfer</div>
+            </div>
+
+            <!-- Amount Input Hero -->
+            <div class="amount-hero-wrapper">
+              <span class="currency-symbol">₹</span>
+              <input type="number" step="any" class="amount-input-big" id="input-amount-hero" placeholder="0" autofocus required>
+            </div>
+
+            <!-- Quick Add Chips -->
+            <div class="quick-amount-row">
+              <div class="quick-amount-chip" data-add="100">+₹100</div>
+              <div class="quick-amount-chip" data-add="500">+₹500</div>
+              <div class="quick-amount-chip" data-add="1000">+₹1,000</div>
+              <div class="quick-amount-chip" data-add="2000">+₹2,000</div>
+            </div>
+
+            <!-- Category Picker -->
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <div class="category-picker-grid" id="category-picker-grid"></div>
+            </div>
+
+            <!-- Merchant Input -->
+            <div class="form-group">
+              <label class="form-label">Merchant / Payee</label>
+              <input type="text" class="form-input" id="input-merchant" placeholder="e.g. Swiggy, Amazon, Zepto" required>
+            </div>
+
+            <!-- Account Picker -->
+            <div class="form-group">
+              <label class="form-label">Account / Card</label>
+              <select class="form-select" id="select-account">
+                <option value="HDFC Bank ••4092">HDFC Bank ••4092 (Savings)</option>
+                <option value="SBI ••8120">SBI ••8120 (Savings)</option>
+                <option value="ICICI Bank ••9914">ICICI Bank ••9914 (Credit Card)</option>
+                <option value="Axis Bank ••3301">Axis Bank ••3301 (Credit Card)</option>
+                <option value="Cash">Cash in Hand</option>
+              </select>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group">
+              <label class="form-label">Note (Optional)</label>
+              <input type="text" class="form-input" id="input-note" placeholder="Add an optional comment">
+            </div>
+
+            <!-- Save Button -->
+            <button type="submit" class="btn-primary">
+              Record Transaction
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL: TRANSACTION DETAIL (Bottom Sheet)   -->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="modal-tx-detail">
+      <div class="bottom-sheet">
+        <div class="sheet-header-handle"></div>
+        <div class="sheet-header">
+          <span class="sheet-title">Transaction Details</span>
+          <button class="sheet-close-btn" onclick="closeModal('modal-tx-detail')">✕</button>
+        </div>
+        <div class="sheet-body" id="tx-detail-body"></div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL: MOBILE QR CODE SHARE               -->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="modal-qr">
+      <div class="bottom-sheet">
+        <div class="sheet-header-handle"></div>
+        <div class="sheet-header">
+          <span class="sheet-title">Open on Mobile Phone</span>
+          <button class="sheet-close-btn" id="btn-close-qr-modal">✕</button>
+        </div>
+        <div class="sheet-body qr-modal-card">
+          <div class="qr-instructions">
+            Scan with your phone's Camera (iPhone Safari or Android Chrome) while connected to the same Wi-Fi:
+          </div>
+
+          <div class="qr-code-box" id="qr-code-display"></div>
+
+          <div>
+            <div class="qr-url-pill">http://10.135.135.93:3000</div>
+          </div>
+
+          <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">
+            💡 Tip: In Safari / Chrome, tap <strong>Share › Add to Home Screen</strong> to run Aura as a full-screen native mobile app!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-msg" id="toast-msg">Notification</div>
+
+  </div>
+</div>
+
+<script src="/app.js"></script>
+<script>
+  // Live Clock Updater in status bar
+  function updateClock() {
+    const el = document.getElementById('status-clock');
+    if (el) {
+      const now = new Date();
+      el.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+  }
+  setInterval(updateClock, 30000);
+  updateClock();
+</script>
+</body>
+</html>

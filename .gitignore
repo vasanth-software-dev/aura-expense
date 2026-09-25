@@ -1,0 +1,152 @@
+# ==============================================================================
+# Aura Expense - .gitignore
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Environment Variables & Secrets
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+service-account*.json
+
+# ------------------------------------------------------------------------------
+# Node.js & Dependencies
+# ------------------------------------------------------------------------------
+node_modules/
+*/node_modules/
+backend/node_modules/
+web/node_modules/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ------------------------------------------------------------------------------
+# Build Outputs & Bundles
+# ------------------------------------------------------------------------------
+dist/
+*/dist/
+backend/dist/
+web/dist/
+build/
+*/build/
+out/
+.next/
+.nuxt/
+*.tsbuildinfo
+.turbo/
+
+# ------------------------------------------------------------------------------
+# Flutter & Dart (Mobile)
+# ------------------------------------------------------------------------------
+.dart_tool/
+**/.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+**/doc/api/
+
+# ------------------------------------------------------------------------------
+# Android (Mobile)
+# ------------------------------------------------------------------------------
+.gradle/
+**/.gradle/
+mobile/android/.gradle/
+**/android/local.properties
+**/android/**/build/
+mobile/android/app/build/
+*.jks
+*.keystore
+mobile/android/app/release/
+mobile/android/app/debug/
+mobile/android/captures/
+
+# ------------------------------------------------------------------------------
+# iOS (Mobile)
+# ------------------------------------------------------------------------------
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/app.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/profile
+**/ios/Flutter/ephemeral
+**/ios/*.xcworkspace/
+**/ios/*.xcuserdatad/
+
+# ------------------------------------------------------------------------------
+# Database & Persistence
+# ------------------------------------------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+backend/prisma/*.db
+backend/prisma/*.db-journal
+postgres-data/
+redis-data/
+
+# ------------------------------------------------------------------------------
+# Testing & Code Coverage
+# ------------------------------------------------------------------------------
+coverage/
+*/coverage/
+.nyc_output/
+.vitest/
+
+# ------------------------------------------------------------------------------
+# Logs & Process Output
+# ------------------------------------------------------------------------------
+logs/
+*.log
+
+# ------------------------------------------------------------------------------
+# IDEs & Code Editors
+# ------------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# ------------------------------------------------------------------------------
+# Operating System & Temporary Files
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/

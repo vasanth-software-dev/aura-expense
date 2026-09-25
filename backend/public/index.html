@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Aura Expense</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <style>
+    :root {
+      --bg: #000000;
+      --card-bg: #1C1C1E;
+      --card-secondary: #2C2C2E;
+      --text-primary: #FFFFFF;
+      --text-secondary: #8E8E93;
+      --text-tertiary: #636366;
+      --accent: #0A84FF;
+      --expense: #FF453A;
+      --income: #30D158;
+      --warning: #FFD60A;
+      --border: rgba(255, 255, 255, 0.1);
+      --radius: 18px;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text-primary); overflow-x: hidden; padding-bottom: 90px; }
+
+    /* Top Navigation Header */
+    .header { padding: 48px 20px 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .header-subtitle { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+    .header-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-top: 2px; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #0A84FF, #5E5CE6); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+
+    /* Hero Spent Card */
+    .hero-card { margin: 12px 20px; background: linear-gradient(180deg, #1C1C1E 0%, #151516 100%); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 22px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+    .hero-label { font-size: 14px; color: var(--text-secondary); font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+    .hero-badge { background: rgba(10, 132, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .hero-amount { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin: 12px 0 8px 0; color: #FFFFFF; }
+    .progress-bar-bg { width: 100%; height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin-top: 14px; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #0A84FF, #5E5CE6); border-radius: 10px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    .progress-sub { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+
+    /* Quick Action Pills */
+    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 20px; }
+    .action-btn { background: var(--card-bg); border: 0.5px solid var(--border); border-radius: 14px; padding: 14px 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: transform 0.1s, background 0.15s; }
+    .action-btn:active { transform: scale(0.96); background: var(--card-secondary); }
+    .action-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .action-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-align: center; }
+
+    /* Section Cards */
+    .section-title { margin: 24px 20px 10px 20px; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; display: flex; justify-content: space-between; align-items: center; }
+    .see-all { font-size: 14px; color: var(--accent); font-weight: 600; cursor: pointer; }
+    .list-card { margin: 0 20px 20px 20px; background: var(--card-bg); border-radius: var(--radius); border: 0.5px solid var(--border); overflow: hidden; }
+
+    /* Transaction Tile */
+    .tx-item { display: flex; align-items: center; padding: 14px 16px; border-bottom: 0.5px solid var(--border); cursor: pointer; transition: background 0.15s; }
+    .tx-item:last-child { border-bottom: none; }
+    .tx-item:active { background: var(--card-secondary); }
+    .tx-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 14px; flex-shrink: 0; }
+    .tx-details { flex: 1; min-width: 0; }
+    .tx-title { font-size: 16px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+    .tx-amount { font-size: 16px; font-weight: 700; text-align: right; letter-spacing: -0.2px; }
+    .tx-amount.debit { color: var(--text-primary); }
+    .tx-amount.credit { color: var(--income); }
+    .tag-account { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,0.1); color: var(--text-secondary); margin-left: 6px; font-weight: 600; }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: rgba(28, 28, 30, 0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 12px); }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-secondary); cursor: pointer; width: 60px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { font-size: 22px; }
+    .nav-label { font-size: 10px; font-weight: 600; }
+    .nav-center-btn { width: 50px; height: 50px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 300; box-shadow: 0 4px 16px rgba(10, 132, 255, 0.4); cursor: pointer; transition: transform 0.1s; }
+    .nav-center-btn:active { transform: scale(0.92); }
+
+    /* Modals & Bottom Sheets */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .bottom-sheet { width: 100%; max-width: 500px; background: #1C1C1E; border-top-left-radius: 28px; border-top-right-radius: 28px; border: 0.5px solid var(--border); padding: 16px 20px 40px 20px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sheet-handle { width: 40px; height: 5px; background: rgba(255, 255, 255, 0.25); border-radius: 3px; margin: 0 auto 18px auto; }
+    .sheet-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; text-align: center; }
+
+    /* Form Inputs */
+    .input-group { margin-bottom: 14px; }
+    .input-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+    .input-field { width: 100%; background: var(--card-secondary); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px 16px; color: white; font-size: 16px; outline: none; }
+    .input-field:focus { border-color: var(--accent); }
+    .pills-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .pill { padding: 8px 14px; border-radius: 20px; background: var(--card-secondary); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; white-space: nowrap; border: 0.5px solid var(--border); }
+    .pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* Hero Amount Display & Keypad */
+    .keypad-display { text-align: center; font-size: 48px; font-weight: 800; color: var(--expense); margin: 10px 0 20px 0; letter-spacing: -1px; }
+    .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .key-btn { background: var(--card-secondary); border-radius: 12px; padding: 14px; font-size: 22px; font-weight: 600; text-align: center; cursor: pointer; border: 0.5px solid var(--border); user-select: none; }
+    .key-btn:active { background: rgba(255, 255, 255, 0.2); }
+    .submit-btn { width: 100%; background: var(--accent); color: white; border: none; border-radius: 14px; padding: 16px; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(10, 132, 255, 0.3); }
+    .submit-btn:active { opacity: 0.9; }
+
+    /* Toast Notification */
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #30D158; color: black; font-weight: 700; font-size: 14px; padding: 12px 20px; border-radius: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); z-index: 999; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; gap: 8px; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Message -->
+  <div id="toast" class="toast">✓ Success</div>
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="header-subtitle" id="currentDate">Friday, September 25</div>
+      <div class="header-title">Aura Expense</div>
+    </div>
+    <div class="avatar" onclick="openSettings()">A</div>
+  </div>
+
+  <!-- Hero Budget & Spending Card -->
+  <div class="hero-card">
+    <div class="hero-label">
+      <span>September Spending</span>
+      <span class="hero-badge" id="budgetPctBadge">7% used</span>
+    </div>
+    <div class="hero-amount" id="totalSpentHero">₹ 2,098.00</div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="budgetProgressFill" style="width: 7%;"></div>
+    </div>
+    <div class="progress-sub">
+      <span id="budgetRemainingLabel">₹ 27,902.00 remaining</span>
+      <span id="budgetLimitLabel">Limit: ₹ 30,000.00</span>
+    </div>
+  </div>
+
+  <!-- Quick Action Pills -->
+  <div class="quick-actions">
+    <div class="action-btn" onclick="openAddModal()">
+      <div class="action-icon" style="background: rgba(10, 132, 255, 0.15); color: var(--accent);">+</div>
+      <div class="action-label">Add Expense</div>
+    </div>
+    <div class="action-btn" onclick="openSmsModal()">
+      <div class="action-icon" style="background: rgba(48, 209, 88, 0.15); color: var(--income);">📩</div>
+      <div class="action-label">Parse SMS</div>
+    </div>
+    <div class="action-btn" onclick="openReviewModal()">
+      <div class="action-icon" style="background: rgba(255, 214, 10, 0.15); color: var(--warning);">⚡</div>
+      <div class="action-label">Review</div>
+    </div>
+    <div class="action-btn" onclick="exportData()">
+      <div class="action-icon" style="background: rgba(175, 82, 222, 0.15); color: #AF52DE;">📥</div>
+      <div class="action-label">Export CSV</div>
+    </div>
+  </div>
+
+  <!-- Category Breakdown -->
+  <div class="section-title">
+    <span>Spending Breakdown</span>
+    <span class="see-all" onclick="refreshDashboard()">Refresh</span>
+  </div>
+  <div class="list-card" id="categoriesContainer">
+    <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading categories...</div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="section-title">
+    <span>Recent Transactions</span>
+    <span class="see-all" onclick="openAddModal()">+ Add New</span>
+  </div>
+  <div class="list-card" id="transactionsContainer">
+    <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading transactions...</div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="navTo('home')">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Home</div>
+    </div>
+    <div class="nav-item" onclick="navTo('transactions')">
+      <div class="nav-icon">💳</div>
+      <div class="nav-label">Transactions</div>
+    </div>
+    <div class="nav-center-btn" onclick="openAddModal()">+</div>
+    <div class="nav-item" onclick="openSmsModal()">
+      <div class="nav-icon">📩</div>
+      <div class="nav-label">SMS Ingest</div>
+    </div>
+    <div class="nav-item" onclick="openSettings()">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">Settings</div>
+    </div>
+  </div>
+
+  <!-- Full-Screen Add Expense Modal -->
+  <div id="addModal" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Add Transaction</div>
+
+      <div class="keypad-display" id="keypadAmount">₹ 0.00</div>
+
+      <div class="input-group">
+        <div class="input-label">Merchant / Payee</div>
+        <input type="text" id="merchantInput" class="input-field" placeholder="e.g. Swiggy, Uber, Local Store">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Account Name (e.g. AD-HDFCBK-S)</div>
+        <input type="text" id="accountNameInput" class="input-field" value="AD-HDFCBK-S">
+        <div class="pills-row" style="margin-top: 8px;">
+          <div class="pill active" onclick="setAccountName('AD-HDFCBK-S')">AD-HDFCBK-S</div>
+          <div class="pill" onclick="setAccountName('VK-SBIINB')">VK-SBIINB</div>
+          <div class="pill" onclick="setAccountName('ICICI-Card')">ICICI-Card</div>
+          <div class="pill" onclick="setAccountName('Cash')">Cash</div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Category</div>
+        <div class="pills-row" id="categoryPills">
+          <div class="pill active" onclick="setCategory(this, 'Food & Dining')">🍔 Food</div>
+          <div class="pill" onclick="setCategory(this, 'Groceries')">🛒 Groceries</div>
+          <div class="pill" onclick="setCategory(this, 'Transportation')">🚕 Transport</div>
+          <div class="pill" onclick="setCategory(this, 'Bills & Utilities')">🧾 Bills</div>
+          <div class="pill" onclick="setCategory(this, 'Shopping')">🛍 Shopping</div>
+        </div>
+      </div>
+
+      <!-- Custom Keypad -->
+      <div class="keypad-grid">
+        <div class="key-btn" onclick="pressKey('1')">1</div>
+        <div class="key-btn" onclick="pressKey('2')">2</div>
+        <div class="key-btn" onclick="pressKey('3')">3</div>
+        <div class="key-btn" onclick="pressKey('4')">4</div>
+        <div class="key-btn" onclick="pressKey('5')">5</div>
+        <div class="key-btn" onclick="pressKey('6')">6</div>
+        <div class="key-btn" onclick="pressKey('7')">7</div>
+        <div class="key-btn" onclick="pressKey('8')">8</div>
+        <div class="key-btn" onclick="pressKey('9')">9</div>
+        <div class="key-btn" onclick="pressKey('.')">.</div>
+        <div class="key-btn" onclick="pressKey('0')">0</div>
+        <div class="key-btn" onclick="pressKey('DEL')">⌫</div>
+      </div>
+
+      <button class="submit-btn" onclick="submitExpense()">Add Expense</button>
+      <button class="submit-btn" style="background: transparent; color: var(--text-secondary); box-shadow: none; margin-top: 8px;" onclick="closeModal('addModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- SMS Ingestion Modal -->
+  <div id="smsModal" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Android SMS Parser</div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; text-align: center;">Paste any transaction SMS alert from HDFC, SBI, ICICI, Axis, or Kotak:</p>
+
+      <div class="input-group">
+        <div class="input-label">Sender Header</div>
+        <input type="text" id="smsSender" class="input-field" value="AD-HDFCBK-S">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">SMS Message Body</div>
+        <textarea id="smsBody" class="input-field" rows="4" placeholder="UPDATE: INR 438.00 debited from HDFC Bank A/C **1234 on 25-SEP-26 to VPA swiggy@icici (UPI Ref No 426912345678).">UPDATE: INR 438.00 debited from HDFC Bank A/C **1234 on 25-SEP-26 to VPA swiggy@icici (UPI Ref No 426912345678).</textarea>
+      </div>
+
+      <button class="submit-btn" onclick="submitSms()">Parse & Ingest SMS</button>
+      <button class="submit-btn" style="background: transparent; color: var(--text-secondary); box-shadow: none; margin-top: 8px;" onclick="closeModal('smsModal')">Close</button>
+    </div>
+  </div>
+
+  <!-- Review Queue Modal -->
+  <div id="reviewModal" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Review Queue</div>
+      <div id="reviewItemsContainer" style="margin-bottom: 14px;">
+        <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Checking review queue...</div>
+      </div>
+      <button class="submit-btn" style="background: transparent; color: var(--text-secondary); box-shadow: none;" onclick="closeModal('reviewModal')">Done</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Settings & Privacy</div>
+      <div style="background: var(--card-secondary); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+        <div style="font-weight: 700; margin-bottom: 8px;">Privacy & Security Controls</div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          ✓ Zero bank passwords stored<br>
+          ✓ Zero UPI PINs or OTPs stored<br>
+          ✓ AES-256-GCM token encryption at rest<br>
+          ✓ Masked structured audit logs
+        </div>
+      </div>
+      <button class="submit-btn" style="background: #30D158; color: black; margin-bottom: 10px;" onclick="exportData()">Export Data (CSV)</button>
+      <button class="submit-btn" style="background: transparent; color: var(--text-secondary); box-shadow: none;" onclick="closeModal('settingsModal')">Close</button>
+    </div>
+  </div>
+
+  <script>
+    let authToken = '';
+    let currentAmountStr = '0';
+    let selectedCategory = 'Food & Dining';
+
+    // Show Notification Toast
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      if (navigator.vibrate) navigator.vibrate(15);
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // Keypad Logic
+    function pressKey(key) {
+      if (navigator.vibrate) navigator.vibrate(8);
+      if (key === 'DEL') {
+        currentAmountStr = currentAmountStr.length > 1 ? currentAmountStr.slice(0, -1) : '0';
+      } else if (key === '.') {
+        if (!currentAmountStr.includes('.')) currentAmountStr += '.';
+      } else {
+        if (currentAmountStr === '0') currentAmountStr = key;
+        else currentAmountStr += key;
+      }
+      document.getElementById('keypadAmount').innerText = '₹ ' + parseFloat(currentAmountStr || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    }
+
+    function setAccountName(name) {
+      document.getElementById('accountNameInput').value = name;
+      if (navigator.vibrate) navigator.vibrate(8);
+    }
+
+    function setCategory(el, cat) {
+      selectedCategory = cat;
+      document.querySelectorAll('#categoryPills .pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      if (navigator.vibrate) navigator.vibrate(8);
+    }
+
+    // Modal Handlers
+    function openAddModal() {
+      currentAmountStr = '0';
+      document.getElementById('keypadAmount').innerText = '₹ 0.00';
+      document.getElementById('addModal').classList.add('active');
+    }
+    function openSmsModal() { document.getElementById('smsModal').classList.add('active'); }
+    function openReviewModal() { loadReviewQueue(); document.getElementById('reviewModal').classList.add('active'); }
+    function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    // API Authentication
+    async function initAuth() {
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'user@example.com', password: 'password123' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          authToken = data.data.token;
+          refreshDashboard();
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
+      }
+    }
+
+    // Refresh Dashboard Data
+    async function refreshDashboard() {
+      if (!authToken) return;
+      try {
+        // Fetch Budgets
+        const budgetRes = await fetch('/api/v1/budgets', { headers: { 'Authorization': `Bearer ${authToken}` } });
+        const budgetData = await budgetRes.json();
+        if (budgetData.success) {
+          const d = budgetData.data;
+          document.getElementById('totalSpentHero').innerText = '₹ ' + d.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+          document.getElementById('budgetRemainingLabel').innerText = '₹ ' + d.remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 }) + ' remaining';
+          document.getElementById('budgetLimitLabel').innerText = 'Limit: ₹ ' + d.totalLimit.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+          const pct = Math.min(100, Math.round(d.progress * 100));
+          document.getElementById('budgetPctBadge').innerText = pct + '% used';
+          document.getElementById('budgetProgressFill').style.width = pct + '%';
+        }
+
+        // Fetch Categories
+        const catRes = await fetch('/api/v1/reports/categories', { headers: { 'Authorization': `Bearer ${authToken}` } });
+        const catData = await catRes.json();
+        if (catData.success && catData.data.categories) {
+          let html = '';
+          catData.data.categories.forEach(c => {
+            html += `
+              <div class="tx-item">
+                <div class="tx-icon" style="background: ${c.colorHex}22; color: ${c.colorHex};">●</div>
+                <div class="tx-details">
+                  <div class="tx-title">${c.name}</div>
+                  <div class="tx-sub">${c.percentage}% of total</div>
+                </div>
+                <div class="tx-amount debit">₹ ${c.total.toLocaleString('en-IN')}</div>
+              </div>
+            `;
+          });
+          document.getElementById('categoriesContainer').innerHTML = html || '<div style="padding:20px;text-align:center;">No data</div>';
+        }
+
+        // Fetch Transactions
+        const txRes = await fetch('/api/v1/transactions?limit=6', { headers: { 'Authorization': `Bearer ${authToken}` } });
+        const txData = await txRes.json();
+        if (txData.success && txData.data.items) {
+          let html = '';
+          txData.data.items.forEach(t => {
+            const accTag = t.accountName ? `<span class="tag-account">${t.accountName}</span>` : '';
+            html += `
+              <div class="tx-item">
+                <div class="tx-icon" style="background: rgba(10, 132, 255, 0.15);">💳</div>
+                <div class="tx-details">
+                  <div class="tx-title">${t.merchant || 'Expense'} ${accTag}</div>
+                  <div class="tx-sub">${new Date(t.transactionTime).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · ${t.paymentMethod}</div>
+                </div>
+                <div class="tx-amount debit">-₹ ${parseFloat(t.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+              </div>
+            `;
+          });
+          document.getElementById('transactionsContainer').innerHTML = html || '<div style="padding:20px;text-align:center;">No transactions yet</div>';
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+      }
+    }
+
+    // Submit Manual Expense
+    async function submitExpense() {
+      const amount = parseFloat(currentAmountStr);
+      if (!amount || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+      const merchant = document.getElementById('merchantInput').value.trim() || 'Manual Expense';
+      const accountName = document.getElementById('accountNameInput').value.trim() || 'AD-HDFCBK-S';
+
+      try {
+        const res = await fetch('/api/v1/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ amount, type: 'DEBIT', merchant, accountName, paymentMethod: 'UPI' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('addModal');
+          showToast('✓ Expense Recorded: ₹' + amount);
+          refreshDashboard();
+        }
+      } catch (err) {
+        alert('Failed to save transaction');
+      }
+    }
+
+    // Submit SMS Ingest
+    async function submitSms() {
+      const sender = document.getElementById('smsSender').value.trim();
+      const body = document.getElementById('smsBody').value.trim();
+      if (!body) return;
+
+      try {
+        const res = await fetch('/api/v1/transactions/sms-ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ messages: [{ sender, body, messageId: 'sms-' + Date.now() }] })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('smsModal');
+          showToast(`✓ Ingested: ${data.data.imported} imported, ${data.data.duplicates} duplicates`);
+          refreshDashboard();
+        }
+      } catch (err) {
+        alert('Failed to parse SMS');
+      }
+    }
+
+    // Load Review Queue
+    async function loadReviewQueue() {
+      try {
+        const res = await fetch('/api/v1/transactions/review-queue', { headers: { 'Authorization': `Bearer ${authToken}` } });
+        const data = await res.json();
+        const container = document.getElementById('reviewItemsContainer');
+        if (data.success && data.data.length > 0) {
+          let html = '';
+          data.data.forEach(item => {
+            html += `
+              <div style="background: var(--card-secondary); border-radius: 12px; padding: 14px; margin-bottom: 10px;">
+                <div style="display:flex; justify-content:space-between; font-weight:700;">
+                  <span>${item.merchant || 'Unknown Merchant'}</span>
+                  <span style="color:var(--expense);">₹ ${item.amount}</span>
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary); margin:4px 0 10px 0;">${item.description || 'SMS Alert'}</div>
+                <button class="submit-btn" style="padding:8px 12px; font-size:13px;" onclick="confirmReview('${item.id}')">Confirm as Groceries</button>
+              </div>
+            `;
+          });
+          container.innerHTML = html;
+        } else {
+          container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);">All caught up! No items need review.</div>';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function confirmReview(id) {
+      try {
+        await fetch(`/api/v1/transactions/${id}/confirm-review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ categoryId: '6439a35b-a0f4-4daa-bc6f-a3a67a14c7aa', rememberRule: true })
+        });
+        showToast('✓ Category Confirmed');
+        loadReviewQueue();
+        refreshDashboard();
+      } catch (err) {
+        alert('Failed to confirm');
+      }
+    }
+
+    // Export Data CSV
+    function exportData() {
+      window.open('/api/v1/privacy/export?format=csv', '_blank');
+      showToast('📥 Downloading CSV...');
+    }
+
+    function navTo(page) {
+      if (page === 'home' || page === 'transactions') refreshDashboard();
+    }
+
+    // Start App
+    window.addEventListener('DOMContentLoaded', initAuth);
+  </script>
+</body>
+</html>

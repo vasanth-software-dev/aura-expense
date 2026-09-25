@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountType {
+  SAVINGS
+  CURRENT
+  CREDIT_CARD
+  WALLET
+  CASH
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum PaymentMethod {
+  UPI
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  BANK_TRANSFER
+  ATM
+  OTHER
+}
+
+enum TransactionSourceType {
+  MANUAL
+  SMS
+  EMAIL
+  CSV
+  ACCOUNT_AGGREGATOR
+}
+
+enum TransactionStatus {
+  CONFIRMED
+  PENDING_REVIEW
+}
+
+enum EmailProvider {
+  GMAIL
+  OUTLOOK
+}
+
+enum EmailAccountStatus {
+  CONNECTED
+  SYNCING
+  ERROR
+  DISCONNECTED
+}
+
+enum SyncStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum CategoryType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+enum MatchField {
+  MERCHANT
+  DESCRIPTION
+  SENDER
+}
+
+model User {
+  id               String              @id @default(uuid())
+  email            String              @unique
+  passwordHash     String
+  name             String
+  currency         String              @default("INR")
+  role             Role                @default(USER)
+  accounts         Account[]
+  categories       Category[]
+  transactions     Transaction[]
+  emailAccounts    EmailAccount[]
+  syncRuns         SyncRun[]
+  categoryRules    UserCategoryRule[]
+  budgets          Budget[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Account {
+  id               String          @id @default(uuid())
+  userId           String          @map("user_id")
+  accountName      String          @default("") @map("account_name") // e.g. "AD-HDFCBK-S"
+  institutionName  String?         @map("institution_name")
+  accountType      AccountType     @default(SAVINGS) @map("account_type")
+  maskLastFour     String?         @map("mask_last_four") // optional
+  ifscPrefix       String?         @map("ifsc_prefix")
+  balance          Decimal?        @db.Decimal(12, 2)
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     Transaction[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Category {
+  id               String              @id @default(uuid())
+  userId           String?             @map("user_id") // null for global default categories
+  name             String
+  icon             String              // e.g. "food", "shopping", "transport"
+  colorHex         String              @map("color_hex") // e.g. "#FF9500"
+  type             CategoryType        @default(EXPENSE)
+  isDefault        Boolean             @default(false) @map("is_default")
+  user             User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     Transaction[]
+  categoryRules    UserCategoryRule[]
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("categories")
+}
+
+model Transaction {
+  id               String                @id @default(uuid())
+  userId           String                @map("user_id")
+  accountId        String?               @map("account_id")
+  accountName      String?               @map("account_name") // e.g. "AD-HDFCBK-S"
+  categoryId       String?               @map("category_id")
+
+  amount           Decimal               @db.Decimal(12, 2)
+  currency         String                @default("INR")
+  type             TransactionType
+
+  merchant         String?
+  description      String?
+
+  paymentMethod    PaymentMethod         @default(UPI) @map("payment_method")
+  transactionTime  DateTime              @map("transaction_time")
+
+  upiReference     String?               @map("upi_reference")
+  bankReference    String?               @map("bank_reference")
+
+  source           TransactionSourceType @default(MANUAL)
+  sourceMessageId  String?               @map("source_message_id")
+
+  confidence       Decimal               @default(1.0) @db.Decimal(3, 2)
+  isTransfer       Boolean               @default(false) @map("is_transfer")
+  transferPairId   String?               @map("transfer_pair_id")
+  isDuplicate      Boolean               @default(false) @map("is_duplicate")
+
+  status           TransactionStatus     @default(CONFIRMED)
+  notes            String?
+
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account          Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category         Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sources          TransactionSource[]
+
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  @@index([userId, transactionTime])
+  @@index([userId, categoryId])
+  @@index([userId, upiReference])
+  @@index([userId, status])
+  @@map("transactions")
+}
+
+model TransactionSource {
+  id                   String                 @id @default(uuid())
+  transactionId        String                 @map("transaction_id")
+  sourceType           TransactionSourceType  @map("source_type")
+  externalId           String?                @map("external_id")
+  messageSnippetMasked String?                @map("message_snippet_masked")
+  receivedAt           DateTime               @default(now()) @map("received_at")
+  transaction          Transaction            @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([sourceType, externalId])
+  @@index([transactionId])
+  @@map("transaction_sources")
+}
+
+model EmailAccount {
+  id                     String             @id @default(uuid())
+  userId                 String             @map("user_id")
+  provider               EmailProvider
+  email                  String
+  accessTokenEncrypted   String?            @map("access_token_encrypted")
+  refreshTokenEncrypted  String?            @map("refresh_token_encrypted")
+  tokenExpiresAt         DateTime?          @map("token_expires_at")
+  lastSyncAt             DateTime?          @map("last_sync_at")
+  syncCursor             String?            @map("sync_cursor")
+  status                 EmailAccountStatus @default(CONNECTED)
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  syncRuns               SyncRun[]
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  @@unique([userId, provider, email])
+  @@index([userId, provider])
+  @@map("email_accounts")
+}
+
+model SyncRun {
+  id                 String        @id @default(uuid())
+  emailAccountId     String        @map("email_account_id")
+  userId             String        @map("user_id")
+  provider           EmailProvider
+  status             SyncStatus    @default(SUCCESS)
+  emailsChecked      Int           @default(0) @map("emails_checked")
+  transactionsFound  Int           @default(0) @map("transactions_found")
+  duplicatesSkipped  Int           @default(0) @map("duplicates_skipped")
+  needsReview        Int           @default(0) @map("needs_review")
+  errorMessage       String?       @map("error_message")
+  startedAt          DateTime      @default(now()) @map("started_at")
+  completedAt        DateTime?     @map("completed_at")
+
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAccount       EmailAccount  @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([emailAccountId])
+  @@map("sync_runs")
+}
+
+model UserCategoryRule {
+  id           String      @id @default(uuid())
+  userId       String      @map("user_id")
+  categoryId   String      @map("category_id")
+  matchField   MatchField  @default(MERCHANT) @map("match_field")
+  matchPattern String      @map("match_pattern")
+  priority     Int         @default(0)
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  @@index([userId, matchPattern])
+  @@map("user_category_rules")
+}
+
+model Budget {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  monthYear      String    @map("month_year") // "YYYY-MM"
+  totalLimit     Decimal   @db.Decimal(12, 2) @map("total_limit")
+  categoryLimits Json?     @map("category_limits") // {"categoryId": limitAmount}
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@unique([userId, monthYear])
+  @@map("budgets")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  title     String
+  body      String
+  type      String    // "BUDGET_WARNING", "SYNC_COMPLETED", "REVIEW_NEEDED", "SYSTEM"
+  isRead    Boolean   @default(false) @map("is_read")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id            String    @id @default(uuid())
+  userId        String?   @map("user_id")
+  action        String    // "LOGIN", "CONNECT_EMAIL", "DISCONNECT_EMAIL", "EXPORT_DATA", "DELETE_ACCOUNT"
+  ipAddress     String?   @map("ip_address")
+  userAgent     String?   @map("user_agent")
+  detailsMasked Json?     @map("details_masked") // Masked metadata, zero credentials
+  createdAt     DateTime  @default(now()) @map("created_at")
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, action])
+  @@map("audit_logs")
+}
