@@ -5,12 +5,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import java.util.Locale
 
 class MainActivity: FlutterActivity() {
     companion object {
@@ -55,8 +54,8 @@ class MainActivity: FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SMS_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "checkSmsPermissions" -> {
-                    val hasReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
-                    val hasRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+                    val hasReceive = checkSelfPermission(Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
+                    val hasRead = checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
                     result.success(hasReceive && hasRead)
                 }
                 "requestSmsPermissions" -> {
@@ -64,7 +63,7 @@ class MainActivity: FlutterActivity() {
                     permissionResultCallback = { granted ->
                         result.success(granted)
                     }
-                    ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE)
+                    requestPermissions(permissions, PERMISSION_REQUEST_CODE)
                 }
                 "readRecentBankSms" -> {
                     val limit = (call.argument<Int>("limit") ?: 15)
@@ -80,7 +79,7 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
@@ -91,7 +90,7 @@ class MainActivity: FlutterActivity() {
 
     private fun readInboxBankMessages(limit: Int): List<Map<String, Any>> {
         val list = ArrayList<Map<String, Any>>()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
             return list
         }
 
@@ -112,7 +111,7 @@ class MainActivity: FlutterActivity() {
                 val date = if (dateIdx != -1) it.getLong(dateIdx) else System.currentTimeMillis()
                 val id = if (idIdx != -1) it.getString(idIdx) ?: "" else ""
 
-                val bodyUpper = body.uppercase()
+                val bodyUpper = body.uppercase(Locale.ROOT)
                 if (bodyUpper.contains("DEBITED") || bodyUpper.contains("CREDITED") ||
                     bodyUpper.contains("SPENT") || bodyUpper.contains("INR") ||
                     bodyUpper.contains("RS.") || bodyUpper.contains("UPI") ||

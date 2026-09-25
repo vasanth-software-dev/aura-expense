@@ -58,13 +58,13 @@ jobs:
         if: ${{ github.event.inputs.build_mode == 'debug' || github.event.inputs.build_mode == 'both' || github.event_name != 'workflow_dispatch' }}
         run: |
           cd mobile
-          flutter build apk --debug
+          flutter build apk --debug --verbose
 
       - name: Build Release APK
         if: ${{ github.event.inputs.build_mode == 'release' || github.event.inputs.build_mode == 'both' || github.event_name != 'workflow_dispatch' }}
         run: |
           cd mobile
-          flutter build apk --release
+          flutter build apk --release --verbose
 
       - name: Upload Debug APK Artifact
         if: ${{ always() && (github.event.inputs.build_mode == 'debug' || github.event.inputs.build_mode == 'both' || github.event_name != 'workflow_dispatch') }}
