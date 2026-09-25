@@ -6,6 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/utils/haptics_helper.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
+import '../sync_lab/sync_lab_screen.dart';
 
 class EmailSyncScreen extends StatefulWidget {
   const EmailSyncScreen({super.key});
@@ -47,12 +48,76 @@ class _EmailSyncScreenState extends State<EmailSyncScreen> {
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('Email Synchronization'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.science_outlined),
+            tooltip: 'Live Sync Lab',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => const SyncLabScreen(initialTabIndex: 1)),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           children: [
             const SizedBox(height: AppSpacing.md),
+
+            // Live Sync Lab Banner
+            AppCard(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isDark ? AppColors.darkAccent : AppColors.lightAccent).withOpacity(0.12),
+                      borderRadius: AppRadius.medium,
+                    ),
+                    child: Icon(
+                      Icons.science_rounded,
+                      color: isDark ? AppColors.darkAccent : AppColors.lightAccent,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Test Real-Time Sync',
+                          style: AppTypography.headline.copyWith(
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'Test live SMS and bank email parsing with real templates.',
+                          style: AppTypography.caption.copyWith(
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AppButton(
+                    text: 'Open Lab',
+                    height: 32,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (ctx) => const SyncLabScreen(initialTabIndex: 1)),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.lg),
 
             // Connected Accounts Section
             Text(

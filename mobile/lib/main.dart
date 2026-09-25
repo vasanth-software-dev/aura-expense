@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/app_bottom_nav.dart';
+import 'core/services/sms_sync_service.dart';
+import 'core/services/transaction_repository.dart';
 import 'features/home/home_screen.dart';
 import 'features/transactions/transactions_screen.dart';
 import 'features/transactions/add_expense_screen.dart';
@@ -10,6 +12,7 @@ import 'features/budgets/budgets_screen.dart';
 import 'features/reports/reports_screen.dart';
 import 'features/email_sync/email_sync_screen.dart';
 import 'features/settings/settings_screen.dart';
+import 'features/sync_lab/sync_lab_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +57,56 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start Android real-time SMS listener
+    SmsSyncService.startRealtimeListener(
+      onTransactionDetected: (sms) {
+        TransactionRepository.instance.importFromSms(sms);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.bolt_rounded, color: Colors.amber, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚡ Real-time SMS Synced: Rs. ${sms.amount.toStringAsFixed(0)} (${sms.merchant})',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'View',
+                textColor: Colors.amber,
+                onPressed: () {
+                  setState(() => _currentIndex = 1);
+                },
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    SmsSyncService.stopRealtimeListener();
+    super.dispose();
+  }
+
+  void _openSyncLab([int tabIndex = 0]) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (ctx) => SyncLabScreen(initialTabIndex: tabIndex)),
+    );
+  }
 
   void _openAddExpense() {
     Navigator.of(context).push(
@@ -118,6 +171,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         onReviewQueueTap: _openReviewQueue,
         onEmailSyncTap: _openEmailSync,
         onReportsTap: _openReports,
+        onSyncLabTap: () => _openSyncLab(0),
       ),
       TransactionsScreen(
         onAddExpenseTap: _openAddExpense,
@@ -127,6 +181,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       SettingsScreen(
         onEmailSyncTap: _openEmailSync,
         onBudgetsTap: () => setState(() => _currentIndex = 2),
+        onSmsDetectionTap: () => _openSyncLab(0),
       ),
     ];
 

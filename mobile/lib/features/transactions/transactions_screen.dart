@@ -9,6 +9,8 @@ import '../../core/widgets/app_search_bar.dart';
 import '../../core/widgets/app_transaction_tile.dart';
 import '../../core/widgets/app_empty_state.dart';
 
+import '../../core/services/transaction_repository.dart';
+
 class TransactionItemModel {
   final String id;
   final String title;
@@ -66,80 +68,23 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     'Bank',
   ];
 
-  final List<TransactionItemModel> _allTransactions = [
-    TransactionItemModel(
-      id: 'tx-1',
-      title: 'Swiggy',
-      categoryName: 'Food',
-      paymentMethod: 'UPI',
-      amount: 438.0,
-      type: 'DEBIT',
-      time: '7:32 PM',
-      dateGroup: 'Today',
-      iconEmoji: '🥤',
-      categoryColor: AppColors.food,
-    ),
-    TransactionItemModel(
-      id: 'tx-2',
-      title: 'Uber',
-      categoryName: 'Transport',
-      paymentMethod: 'UPI',
-      amount: 280.0,
-      type: 'DEBIT',
-      time: '6:10 PM',
-      dateGroup: 'Today',
-      iconEmoji: '🚕',
-      categoryColor: AppColors.transport,
-    ),
-    TransactionItemModel(
-      id: 'tx-3',
-      title: 'Amazon India',
-      categoryName: 'Shopping',
-      paymentMethod: 'UPI',
-      amount: 799.0,
-      type: 'DEBIT',
-      time: '8:43 PM',
-      dateGroup: 'Yesterday',
-      iconEmoji: '🛍',
-      categoryColor: AppColors.shopping,
-    ),
-    TransactionItemModel(
-      id: 'tx-4',
-      title: 'Metro Smart Card',
-      categoryName: 'Transport',
-      paymentMethod: 'UPI',
-      amount: 60.0,
-      type: 'DEBIT',
-      time: '9:15 AM',
-      dateGroup: 'Yesterday',
-      iconEmoji: '🚇',
-      categoryColor: AppColors.transport,
-    ),
-    TransactionItemModel(
-      id: 'tx-5',
-      title: 'Salary Credit',
-      categoryName: 'Salary',
-      paymentMethod: 'Bank Transfer',
-      amount: 85000.0,
-      type: 'CREDIT',
-      time: '10:00 AM',
-      dateGroup: 'September 23',
-      iconEmoji: '💼',
-      categoryColor: AppColors.salary,
-    ),
-    TransactionItemModel(
-      id: 'tx-6',
-      title: 'Transfer to SBI',
-      categoryName: 'Transfer',
-      paymentMethod: 'IMPS',
-      amount: 15000.0,
-      type: 'TRANSFER',
-      time: '3:20 PM',
-      dateGroup: 'September 22',
-      iconEmoji: '🔄',
-      categoryColor: AppColors.lightTransfer,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    TransactionRepository.instance.addListener(_onRepoChanged);
+  }
+
+  @override
+  void dispose() {
+    TransactionRepository.instance.removeListener(_onRepoChanged);
+    super.dispose();
+  }
+
+  void _onRepoChanged() {
+    if (mounted) setState(() {});
+  }
+
+  List<TransactionItemModel> get _allTransactions => TransactionRepository.instance.transactions;
 
   @override
   Widget build(BuildContext context) {

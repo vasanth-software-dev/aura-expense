@@ -9,6 +9,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_budget_card.dart';
 import '../../core/widgets/app_sync_status_card.dart';
 import '../../core/widgets/app_transaction_tile.dart';
+import '../../core/services/transaction_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onAddExpenseTap;
@@ -16,6 +17,7 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onReviewQueueTap;
   final VoidCallback onEmailSyncTap;
   final VoidCallback onReportsTap;
+  final VoidCallback? onSyncLabTap;
 
   const HomeScreen({
     super.key,
@@ -24,6 +26,7 @@ class HomeScreen extends StatefulWidget {
     required this.onReviewQueueTap,
     required this.onEmailSyncTap,
     required this.onReportsTap,
+    this.onSyncLabTap,
   });
 
   @override
@@ -55,6 +58,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
 
     _animController.forward();
+    _updateStateFromRepo();
+    TransactionRepository.instance.addListener(_updateStateFromRepo);
+  }
+
+  void _updateStateFromRepo() {
+    if (mounted) {
+      setState(() {
+        _totalSpent = TransactionRepository.instance.totalSpent;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    TransactionRepository.instance.removeListener(_updateStateFromRepo);
+    _animController.dispose();
+    super.dispose();
   }
 
   @override
@@ -187,13 +207,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 // Sync Status Card
                 AppSyncStatusCard(
                   state: _syncState,
-                  lastSyncedText: '5 minutes ago',
+                  lastSyncedText: 'Live Sync Active',
                   newTransactionsCount: 4,
                   needsReviewCount: _needsReviewCount,
                   duplicatesSkippedCount: 2,
-                  onSyncNow: () {
+                  onSyncNow: widget.onSyncLabTap ?? () {
                     setState(() => _syncState = SyncState.syncing);
-                    Future.delayed(const Duration(seconds: 2), () {
+                    Future.delayed(const Duration(seconds: 1), () {
                       if (mounted) setState(() => _syncState = SyncState.success);
                     });
                   },
@@ -286,38 +306,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   padding: EdgeInsets.zero,
                   child: Column(
                     children: [
-                      AppTransactionTile(
-                        iconEmoji: '🥤',
-                        title: 'Swiggy',
-                        categoryName: 'Food',
-                        paymentMethod: 'UPI',
-                        amount: 438.0,
-                        type: 'DEBIT',
-                        time: 'Today',
-                        categoryColor: AppColors.food,
-                      ),
-                      Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, height: 1),
-                      AppTransactionTile(
-                        iconEmoji: '🛍',
-                        title: 'Amazon',
-                        categoryName: 'Shopping',
-                        paymentMethod: 'UPI',
-                        amount: 799.0,
-                        type: 'DEBIT',
-                        time: 'Yesterday',
-                        categoryColor: AppColors.shopping,
-                      ),
-                      Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, height: 1),
-                      AppTransactionTile(
-                        iconEmoji: '🚇',
-                        title: 'Metro',
-                        categoryName: 'Transport',
-                        paymentMethod: 'UPI',
-                        amount: 60.0,
-                        type: 'DEBIT',
-                        time: 'Yesterday',
-                        categoryColor: AppColors.transport,
-                      ),
+                      for (int i = 0; i < TransactionRepository.instance.transactions.take(4).length; i++) ...[
+                        if (i > 0)
+                          Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder, height: 1),
+                        AppTransactionTile(
+                          iconEmoji: TransactionRepository.instance.transactions[i].iconEmoji ?? '💳',
+                          title: TransactionRepository.instance.transactions[i].title,
+                          categoryName: TransactionRepository.instance.transactions[i].categoryName,
+                          paymentMethod: TransactionRepository.instance.transactions[i].paymentMethod,
+                          amount: TransactionRepository.instance.transactions[i].amount,
+                          type: TransactionRepository.instance.transactions[i].type,
+                          time: TransactionRepository.instance.transactions[i].dateGroup,
+                          categoryColor: TransactionRepository.instance.transactions[i].categoryColor,
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -9,11 +9,13 @@ import '../../core/widgets/app_card.dart';
 class SettingsScreen extends StatelessWidget {
   final VoidCallback onEmailSyncTap;
   final VoidCallback onBudgetsTap;
+  final VoidCallback? onSmsDetectionTap;
 
   const SettingsScreen({
     super.key,
     required this.onEmailSyncTap,
     required this.onBudgetsTap,
+    this.onSmsDetectionTap,
   });
 
   void _showPrivacyDialog(BuildContext context) {
@@ -209,10 +211,10 @@ class SettingsScreen extends StatelessWidget {
                   _buildDivider(isDark),
                   _buildSettingRow(
                     icon: Icons.sms_outlined,
-                    title: 'SMS Detection',
-                    subtitle: 'Android financial SMS parsing enabled',
+                    title: 'SMS Detection & Sync',
+                    subtitle: 'Android financial SMS parsing · Live Lab',
                     showChevron: true,
-                    onTap: () {},
+                    onTap: onSmsDetectionTap ?? () {},
                     isDark: isDark,
                   ),
                 ],
