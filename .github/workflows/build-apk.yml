@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      build_mode:
+        description: 'APK Build Mode'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - debug
+          - release
+          - both
 
 jobs:
   build:
@@ -29,18 +39,45 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Verify Environment
+        run: |
+          java -version
+          flutter doctor -v
+
       - name: Get Dependencies
         run: |
           cd mobile
           flutter pub get
 
-      - name: Build APK (Release / Debug)
+      - name: Ensure Gradle Wrapper Permissions
+        run: |
+          cd mobile
+          chmod +x android/gradlew
+
+      - name: Build Debug APK
+        if: ${{ github.event.inputs.build_mode == 'debug' || github.event.inputs.build_mode == 'both' || github.event_name != 'workflow_dispatch' }}
         run: |
           cd mobile
           flutter build apk --debug
 
-      - name: Upload APK Artifact
+      - name: Build Release APK
+        if: ${{ github.event.inputs.build_mode == 'release' || github.event.inputs.build_mode == 'both' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          cd mobile
+          flutter build apk --release
+
+      - name: Upload Debug APK Artifact
+        if: ${{ always() && (github.event.inputs.build_mode == 'debug' || github.event.inputs.build_mode == 'both' || github.event_name != 'workflow_dispatch') }}
         uses: actions/upload-artifact@v4
         with:
           name: aura-expense-debug-apk
           path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: ignore
+
+      - name: Upload Release APK Artifact
+        if: ${{ always() && (github.event.inputs.build_mode == 'release' || github.event.inputs.build_mode == 'both' || github.event_name != 'workflow_dispatch') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: aura-expense-release-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: ignore
